@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Presupuesto</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Archivo CSS separado -->
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Presupuesto</h1>
+        <form id="presupuestoForm">
+            <label for="cliente">Cliente:</label>
+            <input type="text" id="cliente" name="cliente" required>
+       
+            <table id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th>Cantidad</th>
+                        <th>Producto</th>
+                        <th>Precio Unitario</th>
+                        <th>Precio</th>
+                    </tr>
+                </thead>
+                <tbody id="productos">
+                    <tr>
+                        <td><input type="number" id="cantidad1" class="cantidad" min="1" required></td>
+                        <td>
+                            <select id="producto1" class="producto">
+                                <option value="">Seleccionar Producto</option>
+                                <option value="producto1">Producto 1</option>
+                                <option value="producto2">Producto 2</option>
+                                <option value="producto3">Producto 3</option>
+                                <option value="producto4">Producto 4</option>
+                                <option value="producto5">Producto 5</option>
+                            </select>
+                        </td>
+                        <td><input type="number" id="precioUnitario1" class="precioUnitario" min="0" required></td>
+                        <td><input type="text" id="precio1" class="precio" readonly></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="button" id="agregarProducto" onclick="agregarFila()">Agregar Producto</button>
+            <button type="button" id="eliminarProducto" onclick="eliminarUltimaFila()">Eliminar Producto</button>
+            
+            <div class="resultados">
+                <label>Subtotal: </label><input type="text" id="subtotal" readonly><br>
+                <label>IVA: </label><input type="text" id="iva" readonly><br>
+                <label>Total: </label><input type="text" id="total" readonly><br>
+                <label>Valor de Cuota Ahora 12 (sin interés): </label><input type="text" id="cuota12" readonly><br>
+                <label>Valor Ahora 18 (35% de interés): </label><input type="text" id="cuota18" readonly><br>
+            </div>
+
+            <button type="button" class="no-imprimir" onclick="calcularTotal()">Calcular Total</button>
+            <button type="button" class="no-imprimir" onclick="imprimirPresupuesto()">Imprimir</button>
+            <button type="button" class="no-imprimir" onclick="exportarPDF()">Exportar a PDF</button>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="script.js"></script> <!-- Archivo JavaScript separado -->
+</body>
+</html>
