@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Presupuesto</title>
+    <style>
+        /* CSS integrado */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 10px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+        }
+
+        .resultados {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            cursor: pointer;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        @media print {
+            .no-imprimir {
+                display: none; /* Ocultar elementos con esta clase */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generador de Presupuesto</h1>
+        <form id="presupuestoForm">
+            <label for="cliente">Cliente:</label>
+            <input type="text" id="cliente" name="cliente" required>
+       
+            <table id="tablaProductos">
+                <thead>
+                    <tr>
+                        <th>Cantidad</th>
+                        <th>Producto</th>
+                        <th>Precio Unitario</th>
+                        <th>Precio</th>
+                    </tr>
+                </thead>
+                <tbody id="productos">
+                    <tr>
+                        <td><input type="number" id="cantidad1" class="cantidad" min="1" required></td>
+                        <td>
+                            <select id="producto1" class="producto">
+                                <option value="">Seleccionar Producto</option>
+                                <option value="producto1">Producto 1</option>
+                                <option value="producto2">Producto 2</option>
+                                <option value="producto3">Producto 3</option>
+                                <option value="producto4">Producto 4</option>
+                                <option value="producto5">Producto 5</option>
+                            </select>
+                        </td>
+                        <td><input type="number" id="precioUnitario1" class="precioUnitario" min="0" required></td>
+                        <td><input type="text" id="precio1" class="precio" readonly></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button type="button" id="agregarProducto" onclick="agregarFila()">Agregar Producto</button>
+            <button type="button" id="eliminarProducto" onclick="eliminarUltimaFila()">Eliminar Producto</button>
+            
+            <div class="resultados">
+                <label>Subtotal: </label><input type="text" id="subtotal" readonly><br>
+                <label>IVA: </label><input type="text" id="iva" readonly><br>
+                <label>Total: </label><input type="text" id="total" readonly><br>
+                <label>Valor de Cuota Ahora 12 (sin interés): </label><input type="text" id="cuota12" readonly><br>
+                <label>Valor Ahora 18 (35% de interés): </label><input type="text" id="cuota18" readonly><br>
+            </div>
+
+            <button type="button" class="no-imprimir" onclick="calcularTotal()">Calcular Total</button>
+            <button type="button" class="no-imprimir" onclick="imprimirPresupuesto()">Imprimir</button>
+            <button type="button" class="no-imprimir" onclick="exportarPDF()">Exportar a PDF</button>
+        </form>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <script>
+        let contadorFilas = 1;
+        const limiteFilas = 5;
+
+        document.getElementById('eliminarProducto').style.display = 'none';
+
+        // Función para agregar una nueva fila
+        function agregarFila() {
+            if (contadorFilas < limiteFilas) {
+                contadorFilas++;
+
+                const tablaProductos = document.getElementById('productos');
+                const nuevaFila = document.createElement('tr');
+
+                nuevaFila.innerHTML = `
+                    <td><input type="number" id="cantidad${contadorFilas}" class="cantidad" min="1" required></td>
+                    <td>
+                        <select id="producto${contadorFilas}" class="producto">
+                            <option value="">Seleccionar Producto</option>
+                            <option value="producto1">Producto 1</option>
+                            <option value="producto2">Producto 2</option>
+                            <option value="producto3">Producto 3</option>
+                            <option value="producto4">Producto 4</option>
+                            <option value="producto5">Producto 5</option>
+                        </select>
+                    </td>
+                    <td><input type="number" id="precioUnitario${contadorFilas}" class="precioUnitario" min="0" required></td>
+                    <td><input type="text" id="precio${contadorFilas}" class="precio" readonly></td>
+                `;
+
+                tablaProductos.appendChild(nuevaFila);
+                if (contadorFilas === 2) {
+                    document.getElementById('eliminarProducto').style.display = 'inline-block';
+                }
+
+                if (contadorFilas === limiteFilas) {
+                    document.getElementById('agregarProducto').disabled = true;
+                }
+            }
+        }
+
+        // Función para eliminar la última fila
+        function eliminarUltimaFila() {
+            const tablaProductos = document.getElementById('productos');
+            if (contadorFilas > 1) {
+                tablaProductos.removeChild(tablaProductos.lastChild);
+                contadorFilas--;
+
+                if (contadorFilas === 1) {
+                    document.getElementById('eliminarProducto').style.display = 'none';
+                }
+
+                if (contadorFilas < limiteFilas) {
+                    document.getElementById('agregarProducto').disabled = false;
+                }
+            }
+        }
+
+        // Función para validar y calcular total
+        function calcularTotal() {
+            const cliente = document.getElementById('cliente').value.trim();
+
+            if (!cliente) {
+                alert('Por favor, ingresa el nombre del cliente.');
+                return;
+            }
+
+            // Validar si cada fila tiene datos completos
+            for (let i = 1; i <= contadorFilas; i++) {
+                const cantidad = document.getElementById(`cantidad${i}`).value;
+                const producto = document.getElementById(`producto${i}`).value;
+                const precioUnitario = document.getElementById(`precioUnitario${i}`).value;
+
+                if (!cantidad || !producto || !precioUnitario) {
+                    alert('Por favor, completa todos los datos de cantidad, producto y precio unitario.');
+                    return;
+                }
+            }
+
+            let subtotal = 0;
+            for (let i = 1; i <= contadorFilas; i++) {
+                let cantidad = parseFloat(document.getElementById(`cantidad${i}`).value) || 0;
+                let precioUnitario = parseFloat(document.getElementById(`precioUnitario${i}`).value) || 0;
+                let precio = cantidad * precioUnitario;
+                document.getElementById(`precio${i}`).value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(precio);
+                subtotal += precio;
+            }
+
+            const IVA = subtotal * 0.21;
+            const total = subtotal + IVA;
+            const cuota12 = total / 12;
+            const cuota18 = total * 1.35 / 18;
+
+            document.getElementById('subtotal').value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(subtotal);
+            document.getElementById('iva').value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(IVA);
+            document.getElementById('total').value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(total);
+            document.getElementById('cuota12').value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(cuota12);
+            document.getElementById('cuota18').value = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(cuota18);
+        }
+
+        // Función para imprimir presupuesto
+        function imprimirPresupuesto() {
+            if (!validarCampos()) {
+                return;
+            }
+            calcularTotal();
+            window.print();
+        }
+
+        // Función para exportar PDF con líneas visibles y diseño moderno
+        function exportarPDF() {
+            if (!validarCampos()) {
+                return;
+            }
+            calcularTotal();
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            // Título del documento
+            doc.setFontSize(20);
+            doc.setFont("helvetica", "bold");
+            doc.text('Presupuesto', 105, 20, { align: 'center' });
+
+            // Información del cliente
+            doc.setFontSize(12);
+            doc.setFont("helvetica", "normal");
+            const cliente = document.getElementById("cliente").value;
+            doc.text(`Cliente: ${cliente}`, 20, 40);
+
+            // Crear la tabla con encabezados
+            doc.setFontSize(10);
+            let startY = 60;
+
+            // Dibujar la cabecera de la tabla
+            doc.text('Cantidad', 20, startY);
+            doc.text('Producto', 60, startY);
+            doc.text('Precio Unitario', 120, startY);
+            doc.text('Precio', 170, startY);
+
+            // Añadir un rectángulo alrededor de la cabecera
+            doc.setDrawColor(0);
+            doc.rect(15, startY - 8, 180, 10);  // Rectángulo de cabecera
+
+            startY += 10;
+
+            // Recorrer todas las filas de productos y dibujar solo las que tengan datos
+            for (let i = 1; i <= contadorFilas; i++) {
+                const cantidad = document.getElementById(`cantidad${i}`).value;
+                const productoSelect = document.getElementById(`producto${i}`);
+                const producto = productoSelect.options[productoSelect.selectedIndex].text;
+                const precioUnitario = document.getElementById(`precioUnitario${i}`).value;
+                const precio = document.getElementById(`precio${i}`).value;
+
+                if (cantidad && producto && precioUnitario) {
+                    doc.text(cantidad, 20, startY);
+                    doc.text(producto, 60, startY);
+                    doc.text(precioUnitario, 120, startY);
+                    doc.text(precio, 170, startY);
+
+                    // Añadir rectángulos alrededor de cada fila
+                    doc.rect(15, startY - 8, 180, 10);
+
+                    startY += 10;
+                }
+            }
+
+            // Resumen final con subtotal, IVA y total
+            startY += 10;
+            const subtotal = document.getElementById('subtotal').value || '0';
+            const iva = document.getElementById('iva').value || '0';
+            const total = document.getElementById('total').value || '0';
+
+            doc.setFontSize(12);
+            doc.text(`Subtotal: ${subtotal}`, 20, startY);
+            doc.text(`IVA: ${iva}`, 20, startY + 10);
+            doc.text(`Total: ${total}`, 20, startY + 20);
+
+            // Dibujar rectángulos alrededor de los totales
+            doc.rect(15, startY - 8, 180, 30);
+
+            // Guardar el PDF
+            doc.save('presupuesto.pdf');
+        }
+
+        // Validar si todos los campos requeridos están completos
+        function validarCampos() {
+            const cliente = document.getElementById('cliente').value.trim();
+            if (!cliente) {
+                alert('Por favor, ingresa el nombre del cliente.');
+                return false;
+            }
+
+            // Validar que todos los productos tengan los campos completos
+            for (let i = 1; i <= contadorFilas; i++) {
+                const cantidad = document.getElementById(`cantidad${i}`).value;
+                const producto = document.getElementById(`producto${i}`).value;
+                const precioUnitario = document.getElementById(`precioUnitario${i}`).value;
+
+                if (!cantidad || !producto || !precioUnitario) {
+                    alert('Por favor, completa todos los datos de cantidad, producto y precio unitario.');
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    </script>
+</body>
+</html>
